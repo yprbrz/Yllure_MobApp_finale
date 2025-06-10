@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArrowLeft, Search, X } from 'lucide-react-native';
 
-import { DressCard } from '@/components/DressCard';
+import DressCard from '@/components/DressCard';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { EmptyState } from '@/components/EmptyState';
 
