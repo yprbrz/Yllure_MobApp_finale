@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 
 import { Header } from '@/components/Header';
-import { DressCard } from '@/components/DressCard';
+import DressCard from '@/components/DressCard';
 import { FilterBar } from '@/components/FilterBar';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { EmptyState } from '@/components/EmptyState';

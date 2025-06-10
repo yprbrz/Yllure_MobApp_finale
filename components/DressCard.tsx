@@ -5,16 +5,13 @@ import {
   Image,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
-  Platform,
+  Linking,
+  Alert,
 } from 'react-native';
-import { router } from 'expo-router';
-import { Heart, Eye, RotateCcw } from 'lucide-react-native';
+import { Heart, Instagram, RotateCcw } from 'lucide-react-native';
 
 import { colors, fonts, spacing, shadows } from '@/constants/theme';
 import type { Dress, User } from '@/types';
-
-const { width } = Dimensions.get('window');
 
 interface DressCardProps {
   dress: Dress;
@@ -24,7 +21,7 @@ interface DressCardProps {
   showRemoveOnly?: boolean;
 }
 
-export function DressCard({ 
+export default function DressCard({ 
   dress, 
   onWishlistToggle, 
   isInWishlist = false, 
@@ -35,7 +32,6 @@ export function DressCard({
   const [imageLoading, setImageLoading] = useState(true);
 
   const handleWishlistPress = () => {
-    // Web-compatible feedback (no haptics)
     onWishlistToggle?.();
   };
 
@@ -43,12 +39,27 @@ export function DressCard({
     setShowBackImage(!showBackImage);
   };
 
-  const handleCardPress = () => {
-    router.push(`/dress/${dress.id}`);
-  };
-
-  const handleViewDetails = () => {
-    router.push(`/dress/${dress.id}`);
+  const handleRentNow = async () => {
+    try {
+      const instagramUrl = 'https://www.instagram.com/by.yllure';
+      const canOpen = await Linking.canOpenURL(instagramUrl);
+      
+      if (canOpen) {
+        await Linking.openURL(instagramUrl);
+      } else {
+        Alert.alert(
+          'Instagram',
+          'Follow us @by.yllure on Instagram to rent this dress!',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      Alert.alert(
+        'Contact Us',
+        'Visit @by.yllure on Instagram or contact us at contact@yllure.com to rent this dress!',
+        [{ text: 'OK' }]
+      );
+    }
   };
 
   const formatPrice = (price: number) => {
@@ -58,12 +69,11 @@ export function DressCard({
     }).format(price);
   };
 
-  // Handle both local assets (require()) and remote URLs
   const getImageSource = (image: any) => {
     if (typeof image === 'string') {
       return { uri: image };
     }
-    return image; // This is a require() result
+    return image;
   };
 
   const currentImage = showBackImage ? dress.backImage : dress.frontImage;
@@ -73,10 +83,9 @@ export function DressCard({
     <View style={styles.container}>
       <TouchableOpacity 
         style={styles.card}
-        onPress={handleCardPress}
+        onPress={handleRentNow}
         activeOpacity={0.95}
       >
-        {/* Image Container */}
         <View style={styles.imageContainer}>
           <Image
             source={getImageSource(currentImage)}
@@ -86,14 +95,12 @@ export function DressCard({
             resizeMode="cover"
           />
           
-          {/* Loading overlay */}
           {imageLoading && (
             <View style={styles.loadingOverlay}>
               <View style={styles.loadingSpinner} />
             </View>
           )}
           
-          {/* Image toggle button */}
           {hasMultipleImages && (
             <TouchableOpacity 
               style={styles.imageToggleButton}
@@ -104,7 +111,6 @@ export function DressCard({
             </TouchableOpacity>
           )}
           
-          {/* Wishlist button */}
           {user && (
             <TouchableOpacity 
               style={styles.wishlistButton}
@@ -120,7 +126,6 @@ export function DressCard({
             </TouchableOpacity>
           )}
           
-          {/* Unavailable overlay */}
           {!dress.available && (
             <View style={styles.unavailableOverlay}>
               <View style={styles.unavailableBadge}>
@@ -130,7 +135,6 @@ export function DressCard({
           )}
         </View>
         
-        {/* Content */}
         <View style={styles.content}>
           <Text style={styles.title} numberOfLines={2}>
             {dress.name}
@@ -144,12 +148,12 @@ export function DressCard({
             
             {dress.available && (
               <TouchableOpacity 
-                style={styles.detailsButton}
-                onPress={handleViewDetails}
+                style={styles.rentButton}
+                onPress={handleRentNow}
                 activeOpacity={0.8}
               >
-                <Eye color={colors.ivory} size={16} strokeWidth={2} />
-                <Text style={styles.detailsButtonText}>View</Text>
+                <Instagram color={colors.ivory} size={16} strokeWidth={2} />
+                <Text style={styles.rentButtonText}>Rent Now</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -270,7 +274,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.greige,
   },
-  detailsButton: {
+  rentButton: {
     backgroundColor: colors.taupe,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
@@ -280,7 +284,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     ...shadows.subtle,
   },
-  detailsButtonText: {
+  rentButtonText: {
     fontFamily: fonts.body,
     fontSize: 14,
     fontWeight: '500',

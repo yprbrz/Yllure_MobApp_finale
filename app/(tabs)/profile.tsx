@@ -8,11 +8,12 @@ import {
   Alert,
   Image,
   Platform,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { Camera, User, Settings, Heart, Info, LogOut, Mail, Phone } from 'lucide-react-native';
+import { Camera, User, Heart, Info, LogOut, Mail, Instagram } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import { Header } from '@/components/Header';
@@ -120,6 +121,14 @@ export default function ProfileScreen() {
     router.push('/(tabs)/wishlist');
   };
 
+  const openInstagram = async () => {
+    try {
+      await Linking.openURL('https://www.instagram.com/by.yllure');
+    } catch (error) {
+      Alert.alert('Error', 'Could not open Instagram. Please try again.');
+    }
+  };
+
   // Show login prompt if user is not authenticated
   if (!user && !isLoading) {
     return (
@@ -130,7 +139,7 @@ export default function ProfileScreen() {
             <User color={colors.taupe} size={64} strokeWidth={1.5} />
             <Text style={styles.loginPromptTitle}>Welcome to Yllure</Text>
             <Text style={styles.loginPromptDescription}>
-              Sign in to access your profile, manage your wishlist, and track your rental history.
+              Sign in to access your profile and manage your wishlist.
             </Text>
             <TouchableOpacity 
               style={styles.loginButton}
@@ -193,23 +202,19 @@ export default function ProfileScreen() {
           <Text style={styles.userEmail}>{user?.email}</Text>
         </View>
 
-        {/* Stats */}
+        {/* Wishlist Stats */}
         <View style={styles.statsContainer}>
           <TouchableOpacity 
             style={styles.statItem}
             onPress={navigateToWishlist}
             activeOpacity={0.7}
           >
-            <Heart color={colors.taupe} size={24} strokeWidth={2} />
+            <Heart color={colors.taupe} size={32} strokeWidth={2} />
             <Text style={styles.statNumber}>{wishlistItems.length}</Text>
-            <Text style={styles.statLabel}>Wishlist Items</Text>
+            <Text style={styles.statLabel}>
+              {wishlistItems.length === 1 ? 'Wishlist Item' : 'Wishlist Items'}
+            </Text>
           </TouchableOpacity>
-          
-          <View style={styles.statItem}>
-            <Settings color={colors.taupe} size={24} strokeWidth={2} />
-            <Text style={styles.statNumber}>0</Text>
-            <Text style={styles.statLabel}>Rentals</Text>
-          </View>
         </View>
 
         {/* Menu Items */}
@@ -230,24 +235,6 @@ export default function ProfileScreen() {
 
           <TouchableOpacity 
             style={styles.menuItem}
-            onPress={() => {/* Handle rental history */}}
-            activeOpacity={0.7}
-          >
-            <Settings color={colors.charcoal} size={20} strokeWidth={2} />
-            <Text style={styles.menuItemText}>Rental History</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={() => {/* Handle contact */}}
-            activeOpacity={0.7}
-          >
-            <Mail color={colors.charcoal} size={20} strokeWidth={2} />
-            <Text style={styles.menuItemText}>Contact Support</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.menuItem}
             onPress={() => {/* Handle about */}}
             activeOpacity={0.7}
           >
@@ -259,14 +246,22 @@ export default function ProfileScreen() {
         {/* Contact Information */}
         <View style={styles.contactContainer}>
           <Text style={styles.contactTitle}>Get in Touch</Text>
-          <View style={styles.contactItem}>
+          <TouchableOpacity 
+            style={styles.contactItem}
+            onPress={() => Linking.openURL('mailto:contact@yllure.com')}
+            activeOpacity={0.7}
+          >
             <Mail color={colors.taupe} size={16} strokeWidth={2} />
             <Text style={styles.contactText}>contact@yllure.com</Text>
-          </View>
-          <View style={styles.contactItem}>
-            <Phone color={colors.taupe} size={16} strokeWidth={2} />
-            <Text style={styles.contactText}>+1 (555) 123-4567</Text>
-          </View>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.contactItem}
+            onPress={openInstagram}
+            activeOpacity={0.7}
+          >
+            <Instagram color={colors.taupe} size={16} strokeWidth={2} />
+            <Text style={styles.contactText}>@by.yllure</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Logout Button */}
@@ -276,7 +271,7 @@ export default function ProfileScreen() {
           activeOpacity={0.8}
           disabled={isUpdating}
         >
-          <LogOut color={colors.error} size={20} strokeWidth={2} />
+          <LogOut color={colors.error || '#EF4444'} size={20} strokeWidth={2} />
           <Text style={styles.logoutButtonText}>
             {isUpdating ? 'Signing Out...' : 'Sign Out'}
           </Text>
@@ -392,16 +387,15 @@ const styles = StyleSheet.create({
     color: colors.taupe,
   },
   statsContainer: {
-    flexDirection: 'row',
     backgroundColor: colors.white,
     marginHorizontal: spacing.lg,
     borderRadius: 20,
     padding: spacing.xl,
     marginBottom: spacing.xl,
+    alignItems: 'center',
     ...shadows.subtle,
   },
   statItem: {
-    flex: 1,
     alignItems: 'center',
     gap: spacing.sm,
   },
@@ -413,7 +407,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontFamily: fonts.body,
-    fontSize: 14,
+    fontSize: 16,
     color: colors.taupe,
     textAlign: 'center',
   },
@@ -476,6 +470,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: spacing.sm,
     justifyContent: 'center',
+    paddingVertical: spacing.xs,
   },
   contactText: {
     fontFamily: fonts.body,
@@ -493,12 +488,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: spacing.xl * 2,
     borderWidth: 1,
-    borderColor: colors.error,
+    borderColor: '#EF4444',
   },
   logoutButtonText: {
     fontFamily: fonts.body,
     fontSize: 16,
     fontWeight: '500',
-    color: colors.error,
+    color: '#EF4444',
   },
 });

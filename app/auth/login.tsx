@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { ArrowLeft, Mail, Lock, Eye, EyeOff } from 'lucide-react-native';
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertTriangle } from 'lucide-react-native';
 
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { useUserStore } from '@/store/userStore';
@@ -22,9 +22,22 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
-  const { login } = useUserStore();
+  const { login, isLoading, error, clearError, isAuthenticated } = useUserStore();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated]);
+
+  // Clear error when user starts typing
+  useEffect(() => {
+    if (error) {
+      clearError();
+    }
+  }, [email, password]);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -32,19 +45,22 @@ export default function LoginScreen() {
       return;
     }
 
-    setIsLoading(true);
     try {
       const success = await login(email.trim(), password);
       if (success) {
-        router.replace('/(tabs)');
-      } else {
-        Alert.alert('Login Failed', 'Invalid email or password');
+        // Navigation will be handled by the useEffect above
+        console.log('✅ Login successful, redirecting...');
       }
+      // Error handling is now managed by the store
     } catch (error) {
-      Alert.alert('Error', 'Login failed. Please try again.');
-    } finally {
-      setIsLoading(false);
+      console.error('❌ Login error in component:', error);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
     }
+  };
+
+  const handleDemoLogin = () => {
+    setEmail('demo@yllure.com');
+    setPassword('password123');
   };
 
   const goBack = () => {
@@ -83,10 +99,18 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.form}>
+              {/* Error Message */}
+              {error && (
+                <View style={styles.errorContainer}>
+                  <AlertTriangle color={colors.error || '#EF4444'} size={20} strokeWidth={2} />
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
+              )}
+
               {/* Email Input */}
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Email</Text>
-                <View style={styles.inputWrapper}>
+                <View style={[styles.inputWrapper, error && styles.inputWrapperError]}>
                   <Mail color={colors.greige} size={20} strokeWidth={2} />
                   <TextInput
                     style={styles.input}
@@ -98,6 +122,7 @@ export default function LoginScreen() {
                     autoCapitalize="none"
                     autoCorrect={false}
                     editable={!isLoading}
+                    returnKeyType="next"
                   />
                 </View>
               </View>
@@ -105,7 +130,7 @@ export default function LoginScreen() {
               {/* Password Input */}
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Password</Text>
-                <View style={styles.inputWrapper}>
+                <View style={[styles.inputWrapper, error && styles.inputWrapperError]}>
                   <Lock color={colors.greige} size={20} strokeWidth={2} />
                   <TextInput
                     style={styles.input}
@@ -117,6 +142,8 @@ export default function LoginScreen() {
                     autoCapitalize="none"
                     autoCorrect={false}
                     editable={!isLoading}
+                    returnKeyType="done"
+                    onSubmitEditing={handleLogin}
                   />
                   <TouchableOpacity 
                     onPress={() => setShowPassword(!showPassword)}
@@ -139,7 +166,10 @@ export default function LoginScreen() {
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <LoadingSpinner size="small" />
+                  <View style={styles.loadingContainer}>
+                    <LoadingSpinner size="small" />
+                    <Text style={styles.loadingText}>Signing in...</Text>
+                  </View>
                 ) : (
                   <Text style={styles.loginButtonText}>Sign In</Text>
                 )}
@@ -149,7 +179,22 @@ export default function LoginScreen() {
               <View style={styles.demoNotice}>
                 <Text style={styles.demoNoticeTitle}>Demo Mode</Text>
                 <Text style={styles.demoNoticeText}>
-                  Enter any email and password to sign in. This is a demo app.
+                  Enter any email and password to sign in, or use the demo account below.
+                </Text>
+                <TouchableOpacity 
+                  style={styles.demoButton}
+                  onPress={handleDemoLogin}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.demoButtonText}>Fill Demo Credentials</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Additional Info */}
+              <View style={styles.infoContainer}>
+                <Text style={styles.infoText}>
+                  This is a demo application showcasing a dress rental platform.
+                  All data is simulated for demonstration purposes.
                 </Text>
               </View>
             </View>
@@ -214,6 +259,24 @@ const styles = StyleSheet.create({
   form: {
     gap: spacing.xl,
   },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
+  },
+  errorText: {
+    flex: 1,
+    fontFamily: fonts.body,
+    fontSize: 14,
+    color: '#DC2626',
+    lineHeight: 20,
+  },
   inputContainer: {
     gap: spacing.sm,
   },
@@ -234,6 +297,10 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.champagne,
     ...shadows.subtle,
+  },
+  inputWrapperError: {
+    borderColor: '#FECACA',
+    backgroundColor: '#FEF2F2',
   },
   input: {
     flex: 1,
@@ -258,18 +325,29 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.ivory,
   },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  loadingText: {
+    fontFamily: fonts.body,
+    fontSize: 16,
+    fontWeight: '500',
+    color: colors.ivory,
+  },
   demoNotice: {
     backgroundColor: colors.champagne,
     padding: spacing.lg,
     borderRadius: 12,
     alignItems: 'center',
+    gap: spacing.sm,
   },
   demoNoticeTitle: {
     fontFamily: fonts.body,
     fontSize: 16,
     fontWeight: '600',
     color: colors.charcoal,
-    marginBottom: spacing.sm,
   },
   demoNoticeText: {
     fontFamily: fonts.body,
@@ -277,5 +355,30 @@ const styles = StyleSheet.create({
     color: colors.charcoal,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  demoButton: {
+    backgroundColor: colors.taupe,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: 8,
+    marginTop: spacing.sm,
+  },
+  demoButtonText: {
+    fontFamily: fonts.body,
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.ivory,
+  },
+  infoContainer: {
+    paddingTop: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: colors.champagne,
+  },
+  infoText: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    color: colors.greige,
+    textAlign: 'center',
+    lineHeight: 18,
   },
 });
